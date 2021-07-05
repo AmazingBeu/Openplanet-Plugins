@@ -1,12 +1,4 @@
-#name "Map Validator"
-#author "Beu"
-#category "Map Editor"
-#siteid 91
-#version "1.2"
-
 // Based on the Moski plugin which is also based on the Miss plugin :)
-
-#include "Icons.as"
 
 bool menu_visibility = false;
 int author_time;
@@ -22,7 +14,7 @@ void validate(int author_time) {
 	}
 
 	if (editor.PluginMapType !is null) {
-		editor.PluginMapType.ValidationStatus = EValidationStatus::Validated;
+		editor.PluginMapType.ValidationStatus = CGameEditorPluginMapMapType::EValidationStatus::Validated;
 	}
 	if (map !is null) {
 		map.TMObjective_AuthorTime = author_time;

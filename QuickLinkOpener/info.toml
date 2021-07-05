@@ -1,0 +1,14 @@
+[meta]
+name = "Quick Link Opener"
+author = "Beu"
+category = "Utilities"
+
+siteid = 101
+version = "1.1"
+
+perms = "paid"
+
+blocks = [ "Plugin_QuickLinkOpener" ]
+
+[script]
+imports = [ "Icons.as" ]
