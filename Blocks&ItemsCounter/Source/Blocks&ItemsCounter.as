@@ -1,13 +1,6 @@
-#name "Blocks & Items Counter"
-#author "Beu"
-#category "Map Editor"
-#version "1.0"
-#siteid 97
-
-#include "Icons.as"
-
 class Objects { //Items or Blocks
 	string name;
+	int trigger; // CGameItemModel::EnumWaypointType or CGameCtnBlockInfo::EWayPointType
 	string type;
 	string source;
 	int size;
@@ -15,8 +8,9 @@ class Objects { //Items or Blocks
 	bool icon;
 	array<vec3> positions;
 
-	Objects(string name, bool icon, string type, string source, int size, vec3 pos ) {
+	Objects(string name, int trigger, bool icon, string type, string source, int size, vec3 pos ) {
 		this.name = name;
+		this.trigger = trigger;
 		this.count = 1;
 		this.type = type;
 		this.icon = icon;
@@ -71,13 +65,12 @@ void RefreshBlocks() {
 	auto map = GetApp().RootMap;
 
 	if (map !is null) {
-		int defaultheight = 0;
-		if (map.DecorationName.SubStr(0, 5) == "48x48") { // Change the default height depending on the presence of the stadium or not
-			defaultheight = 9;
-		}
-
 		// Blocks
 		auto blocks = map.Blocks;
+
+		// Editor plugin API for GetVec3FromCoord function
+		auto pluginmaptype = cast<CGameEditorPluginMapMapType>(cast<CGameCtnEditorFree>(GetApp().Editor).PluginMapType);
+
 		for(int i = 0; i < blocks.Length; i++) {
 			int idifexist = -1;
 			string blockname;
@@ -85,9 +78,22 @@ void RefreshBlocks() {
 			if (blockname.ToLower().SubStr(blockname.Length - 22, 22) == ".block.gbx_customblock") blockname = blockname.SubStr(0, blockname.Length - 12);
 			if (include_default_objects || blockname.ToLower().SubStr(blockname.Length - 10, 10) == ".block.gbx") {
 				vec3 pos;
-				pos.x = blocks[i].CoordX * 32 + 16;
-				pos.y = (blocks[i].CoordY - defaultheight) * 8 + 4;
-				pos.z = blocks[i].CoordZ * 32 + 16;
+				if (blocks[i].CoordX != 4294967295 && blocks[i].CoordZ != 4294967295) { // Not placed in free mapping
+					if (pluginmaptype != null) { // Editor plugin is available
+						pos = pluginmaptype.GetVec3FromCoord(blocks[i].Coord);
+					} else {
+						pos.x = blocks[i].CoordX * 32 + 16;
+						pos.y = (blocks[i].CoordY - 8) * 8 + 4;
+						pos.z = blocks[i].CoordZ * 32 + 16;
+					}
+				} else {
+					pos = Dev::GetOffsetVec3(blocks[i], 0x6c);
+					// center the coordinates in the middle of the block
+					pos.x += 16;
+					pos.y += 4;
+					pos.z += 16;
+				}
+
 
 				int index = objectsindex.Find(blockname);
 				
@@ -95,7 +101,8 @@ void RefreshBlocks() {
 					objects[index].count++;
 					objects[index].positions.InsertLast(pos);
 				} else {
-					AddNewObject(blockname, "Block", pos );
+					int trigger = blocks[i].BlockModel.EdWaypointType;
+					AddNewObject(blockname, trigger, "Block", pos );
 					objectsindex.InsertLast(blockname);
 				}
 			}
@@ -120,7 +127,8 @@ void RefreshItems() {
 					objects[index].count++;
 					objects[index].positions.InsertLast(items[i].AbsolutePositionInMap);
 				} else {
-					AddNewObject(itemname, "Item", items[i].AbsolutePositionInMap);
+					int trigger = items[i].ItemModel.WaypointType;
+					AddNewObject(itemname, trigger, "Item", items[i].AbsolutePositionInMap);
 					objectsindex.InsertLast(itemname);
 				}
 			}
@@ -129,7 +137,7 @@ void RefreshItems() {
 	}
 }
 
-void AddNewObject(string objectname, string type, vec3 pos) {
+void AddNewObject(string objectname, int trigger, string type, vec3 pos) {
 	bool icon = false;
 	int size;
 	string source;
@@ -147,8 +155,7 @@ void AddNewObject(string objectname, string type, vec3 pos) {
 	} else { // Blocks and Items
 		source = "Local";
 		@file = Fids::GetUser(type + 's\\' + objectname);
-		CGameItemModel@ model = cast<CGameItemModel>(file.Nod);
-		@collector = cast<CGameCtnCollector>(model);
+		@collector = cast<CGameCtnCollector>(cast<CGameItemModel>(file.Nod));
 		if (collector is null || (collector.Icon !is null || file.ByteSize == 0)) {
 			@tempfile = Fids::GetFake('MemoryTemp\\CurrentMap_EmbeddedFiles\\ContentLoaded\\' + type + 's\\' + objectname);
 		}
@@ -168,7 +175,8 @@ void AddNewObject(string objectname, string type, vec3 pos) {
 	} else {
 		size = file.ByteSize;
 	}
-	objects.InsertLast(Objects(objectname, icon, type, source, size, pos));
+
+	objects.InsertLast(Objects(objectname, trigger, icon, type, source, size, pos));
 }
 
 bool FocusCam(string objectname) {
@@ -176,26 +184,14 @@ bool FocusCam(string objectname) {
 	auto camera = editor.OrbitalCameraControl;
 	auto map = GetApp().RootMap;
 
-	// variables to workaround the non-existence of positions for freemapping placed blocks
-	bool canfocus = false;
-	int iterations;
 
 	if (camera !is null) {
 		int index = objectsindex.Find(objectname);
-		iterations = 0;	
 
-		while (!canfocus) {
-			iterations++;
-			camerafocusindex++;
-			if (camerafocusindex > objects[index].positions.get_Length() - 1 ) {
-				camerafocusindex = 0;
-			}
-			if (objects[index].positions[camerafocusindex].x != 4294967295 && objects[index].positions[camerafocusindex].z != 4294967295) {
-				canfocus = true;
-			}
-			if (iterations > objects[index].positions.get_Length()) {
-				return false;
-			}
+		camerafocusindex++;
+
+		if (camerafocusindex > objects[index].positions.get_Length() - 1 ) {
+			camerafocusindex = 0;
 		}
 
 		camera.m_TargetedPosition = objects[index].positions[camerafocusindex];
@@ -213,9 +209,30 @@ void GenerateRow(Objects@ object) {
 	if (UI::Button(Icons::Search + "###" + object.name)) {
 		FocusCam(object.name);
 	}
-	if (UI::IsItemHovered() && object.type == "Block") infotext = "ATM, it's not possible to focus on blocks placed in free mapping.";
+	if (UI::IsItemHovered() && object.type == "Block" && cast<CGameEditorPluginMapMapType>(cast<CGameCtnEditorFree>(GetApp().Editor).PluginMapType) == null) infotext = "Editor plugins are disabled, the coordinates of the blocks are estimated and can be imprecise";
 	UI::SameLine();
-	UI::Text(object.name);
+	switch(object.trigger){
+		case CGameCtnBlockInfo::EWayPointType::Start:
+			UI::Text("\\$9f9" + object.name);
+			if (UI::IsItemHovered()) infotext = "It's a start block/item";
+			break;
+		case CGameCtnBlockInfo::EWayPointType::Finish:
+			UI::Text("\\$f66" + object.name);
+			if (UI::IsItemHovered()) infotext = "It's a finish block/item";
+			break;
+		case CGameCtnBlockInfo::EWayPointType::Checkpoint:
+			UI::Text("\\$99f" + object.name);
+			if (UI::IsItemHovered()) infotext = "It's a checkpoint block/item";
+			break;
+		case CGameCtnBlockInfo::EWayPointType::StartFinish:
+			UI::Text("\\$ff6" + object.name);
+			if (UI::IsItemHovered()) infotext = "It's a multilap block/item";
+			break;
+		default:
+			UI::Text(object.name);
+			break;
+	}
+
 	UI::TableNextColumn();
 	UI::Text(object.type);
 	UI::TableNextColumn();
@@ -253,7 +270,6 @@ void Render() {
 			if (UI::IsItemHovered()) infotext = "Parsing all blocks and items to generate the table. Please wait...";
 		} else {
 			if (UI::Button(Icons::SyncAlt + " Refresh")) {
-				// Force to split the refresh functions to bypass the script execution delay on heavy maps
 				refreshobject = true;
 				forcesort = true;
 			}

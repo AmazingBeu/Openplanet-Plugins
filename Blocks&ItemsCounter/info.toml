@@ -1,0 +1,12 @@
+[meta]
+name = "Blocks & Items Counter"
+author = "Beu"
+category = "Map Editor"
+
+siteid = 97
+version = "1.1"
+
+blocks = [ "Plugin_Blocks&ItemsCounter" ]
+
+[script]
+imports = [ "Icons.as" ]
