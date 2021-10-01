@@ -6,18 +6,32 @@ int author_time;
 void Main() {}
 
 void validate(int author_time) {
-	auto app = GetApp();
-	auto editor = cast<CGameCtnEditorFree>(app.Editor);
-	auto map = app.RootMap;
+	CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+#if TMNEXT || MP4
+	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
+	CGameEditorPluginMapMapType@ pluginmaptype = cast<CGameEditorPluginMapMapType>(editor.PluginMapType);
+#elif TURBO
+	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
+	CGameCtnEditorPluginMapType@ pluginmaptype = cast<CGameCtnEditorPluginMapType>(editor.EditorMapType);
+#endif
+
 	if (editor is null) {
 		return;
 	}
 
-	if (editor.PluginMapType !is null) {
-		editor.PluginMapType.ValidationStatus = CGameEditorPluginMapMapType::EValidationStatus::Validated;
+	if (pluginmaptype !is null) {
+#if TMNEXT || MP4
+		pluginmaptype.ValidationStatus = CGameEditorPluginMapMapType::EValidationStatus::Validated;
+#elif TURBO
+		pluginmaptype.ValidationStatus = CGameCtnEditorPluginMapType::EValidationStatus::Validated;
+#endif
+		
 	}
 	if (map !is null) {
 		map.TMObjective_AuthorTime = author_time;
+#if MP4 || TURBO
+		map.IdName = "";
+#endif
 	}
 }
 
@@ -26,10 +40,17 @@ void Render() {
 		return;
 	}
 
-	auto app = cast<CGameManiaPlanet>(GetApp());
+	CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+#if TMNEXT || MP4
+	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
+	CGameEditorPluginMapMapType@ pluginmaptype = cast<CGameEditorPluginMapMapType>(editor.PluginMapType);
+#elif TURBO
+	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
+	CGameCtnEditorPluginMapType@ pluginmaptype = cast<CGameCtnEditorPluginMapType>(editor.EditorMapType);
+#endif
 
 	UI::Begin("\\$cf9" + Icons::Flag + "\\$z Map Validator###MapValidator", menu_visibility, UI::WindowFlags::NoResize | UI::WindowFlags::AlwaysAutoResize | UI::WindowFlags::NoCollapse);
-	if (app.RootMap !is null) {
+	if (map !is null && editor !is null) {
 		author_time = UI::InputInt("Author time in ms", author_time ,1);
 
 		if (author_time < 0) author_time = 0;
@@ -47,6 +68,9 @@ void Render() {
 		UI::SameLine();
 		UI::Text("with " + display_time + " of author time");
 
+#if TURBO
+		UI::Text("Note: your map must have a start and a finish\n(or a multilap + 1CP) to be validated with the plugin");
+#endif
 	} else {
 		UI::Text("Open this plugin in the map editor");
 	}
