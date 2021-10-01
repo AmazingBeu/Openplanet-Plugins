@@ -1,0 +1,10 @@
+[meta]
+name = "Lightmap Quality"
+author = "Beu"
+category = "Map Editor"
+
+siteid = 137
+version = "1.0"
+
+[script]
+imports = [ "Icons.as" ]
