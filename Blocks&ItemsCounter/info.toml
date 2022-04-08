@@ -4,7 +4,7 @@ author = "Beu"
 category = "Map Editor"
 
 siteid = 97
-version = "1.1"
+version = "1.2"
 
 blocks = [ "Plugin_Blocks&ItemsCounter" ]
 

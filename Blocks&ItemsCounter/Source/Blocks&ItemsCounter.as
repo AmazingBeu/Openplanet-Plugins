@@ -30,7 +30,7 @@ enum ESortColumn {
 
 
 bool menu_visibility = false;
-int camerafocusindex = 0;
+uint camerafocusindex = 0;
 bool include_default_objects = false;
 bool refreshobject;
 
@@ -71,7 +71,7 @@ void RefreshBlocks() {
 		// Editor plugin API for GetVec3FromCoord function
 		auto pluginmaptype = cast<CGameEditorPluginMapMapType>(cast<CGameCtnEditorFree>(GetApp().Editor).PluginMapType);
 
-		for(int i = 0; i < blocks.Length; i++) {
+		for(uint i = 0; i < blocks.Length; i++) {
 			int idifexist = -1;
 			string blockname;
 			blockname = blocks[i].BlockModel.IdName;
@@ -79,7 +79,7 @@ void RefreshBlocks() {
 			if (include_default_objects || blockname.ToLower().SubStr(blockname.Length - 10, 10) == ".block.gbx") {
 				vec3 pos;
 				if (blocks[i].CoordX != 4294967295 && blocks[i].CoordZ != 4294967295) { // Not placed in free mapping
-					if (pluginmaptype != null) { // Editor plugin is available
+					if (pluginmaptype !is null) { // Editor plugin is available
 						pos = pluginmaptype.GetVec3FromCoord(blocks[i].Coord);
 					} else {
 						pos.x = blocks[i].CoordX * 32 + 16;
@@ -118,7 +118,7 @@ void RefreshItems() {
 	if (map !is null) {
 		// Items
 		auto items = map.AnchoredObjects;
-		for(int i = 0; i < items.Length; i++) {
+		for(uint i = 0; i < items.Length; i++) {
 			int idifexist = -1;
 			string itemname = items[i].ItemModel.IdName;
 			if (include_default_objects || itemname.ToLower().SubStr(itemname.Length - 9, 9) == ".item.gbx") {
@@ -209,7 +209,7 @@ void GenerateRow(Objects@ object) {
 	if (UI::Button(Icons::Search + "###" + object.name)) {
 		FocusCam(object.name);
 	}
-	if (UI::IsItemHovered() && object.type == "Block" && cast<CGameEditorPluginMapMapType>(cast<CGameCtnEditorFree>(GetApp().Editor).PluginMapType) == null) infotext = "Editor plugins are disabled, the coordinates of the blocks are estimated and can be imprecise";
+	if (UI::IsItemHovered() && object.type == "Block" && cast<CGameEditorPluginMapMapType>(cast<CGameCtnEditorFree>(GetApp().Editor).PluginMapType) is null) infotext = "Editor plugins are disabled, the coordinates of the blocks are estimated and can be imprecise";
 	UI::SameLine();
 	switch(object.trigger){
 		case CGameCtnBlockInfo::EWayPointType::Start:
@@ -326,11 +326,11 @@ void Render() {
 				}
 			}
 			if (sortableobjects.Length > 0 ) {
-				for(int i = 0; i < sortableobjects.Length; i++) {
+				for(uint i = 0; i < sortableobjects.Length; i++) {
 					GenerateRow(sortableobjects[i]);
 				}
 			} else {
-				for(int i = 0; i < objects.Length; i++) {
+				for(uint i = 0; i < objects.Length; i++) {
 					GenerateRow(objects[i]);
 				}
 			}
