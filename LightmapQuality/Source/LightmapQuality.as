@@ -1,6 +1,8 @@
 bool menu_visibility = false;
 int mode;
 int lightmaptoselect = -1;
+int nbblocksdone;
+int nbtotalblocks;
 bool searchmode;
 array<CGameEditorPluginMap::EMapElemLightmapQuality> activelm;
 
@@ -14,10 +16,15 @@ void Main() {
 			auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
 			auto pluginmap = cast<CGameEditorPluginMapMapType>(editor.PluginMapType);
 
-			pluginmap.EditMode = CGameEditorPluginMap::EditMode::SelectionAdd;
 			auto blocks = GetApp().RootMap.Blocks;
-			for (int i = 0; i < blocks.Length;) {
-				print("Block number: "  + i);
+			auto items = GetApp().RootMap.AnchoredObjects;
+
+			nbblocksdone = 0;
+			nbtotalblocks = blocks.Length + items.Length;
+
+			pluginmap.EditMode = CGameEditorPluginMap::EditMode::SelectionAdd;
+			
+			for (uint i = 0; i < blocks.Length;) {
 				if (!(lightmaptoselect >= 0) || pluginmap.PlaceMode != CGameEditorPluginMap::EPlaceMode::CopyPaste) break; //ability to cancel
 				if (pluginmap.EditMode == CGameEditorPluginMap::EditMode::SelectionAdd) {
 					if (blocks[i].MapElemLmQuality == lightmaptoselect && blocks[i].BlockModel.Name != "Grass") {
@@ -29,13 +36,14 @@ void Main() {
 					}
 					if (i % 5 == 0) yield();
 					i++;
+					nbblocksdone++;
 				} else {
 					yield();
 				}
 			}
 
-			auto items = GetApp().RootMap.AnchoredObjects;
-			for (int i = 0; i < items.Length;) {
+			
+			for (uint i = 0; i < items.Length;) {
 				if (! (lightmaptoselect >= 0) || pluginmap.PlaceMode != CGameEditorPluginMap::EPlaceMode::CopyPaste) break; //ability to cancel
 				if (pluginmap.EditMode == CGameEditorPluginMap::EditMode::SelectionAdd) {
 					if (items[i].MapElemLmQuality == lightmaptoselect) {
@@ -47,6 +55,7 @@ void Main() {
 					}
 					if (i % 5 == 0) yield();
 					i++;
+					nbblocksdone++;
 				} else {
 					yield();
 				}
@@ -61,14 +70,13 @@ void UpdateSelectedLightmap() {
 	auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
 	auto pluginmap = cast<CGameEditorPluginMapMapType>(editor.PluginMapType);
 	if (pluginmap.PlaceMode == CGameEditorPluginMap::EPlaceMode::CopyPaste) {
-
 		// Value in CopyPaste_GetLightmapQualityInSelection_Results is broken
 
-		/*pluginmap.CopyPaste_GetLightmapQualityInSelection(); 
+		pluginmap.CopyPaste_GetLightmapQualityInSelection(); 
 		activelm = {};
-		for (int i=0 ; i < pluginmap.CopyPaste_GetLightmapQualityInSelection_Results.Length; i++) {
+		for (uint i=0 ; i < pluginmap.CopyPaste_GetLightmapQualityInSelection_Results.Length; i++) {
 			print("" + pluginmap.CopyPaste_GetLightmapQualityInSelection_Results[i]);
-		}*/
+		}
 	} else {
 		activelm = {pluginmap.NextMapElemLightmapQuality};
 	}
@@ -104,6 +112,10 @@ void Render() {
 			if (UI::Button(Icons::Search)) {
 				lightmaptoselect = -1; //ability to cancel
 				searchmode = !searchmode;
+
+				//reset status info
+				nbblocksdone = 0;
+				nbtotalblocks = 0;
 				if (!searchmode) UI::PopStyleColor();
 			} else {
 				if (searchmode) UI::PopStyleColor();
@@ -232,6 +244,13 @@ void Render() {
 				}
 			}
 		}
+
+		if (mode == CGameEditorPluginMap::EPlaceMode::CopyPaste && nbtotalblocks == 0) {
+			UI::Text("Note: buttons highlighting doesn't work in this mode,\nseems to be a bug of Openplanet");
+		} else if (mode == CGameEditorPluginMap::EPlaceMode::CopyPaste) {
+			UI::Text("Progress: " + nbblocksdone + " / " + nbtotalblocks);
+		}
+
 	} else {
 		UI::Text("Open this plugin in the map editor");
 	}
