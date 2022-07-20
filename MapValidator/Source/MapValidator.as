@@ -6,45 +6,51 @@ int author_time;
 void Main() {}
 
 void validate(int author_time) {
+	// Get editor var
 #if UNITED
 	CTrackManiaEditor@ editor = cast<CTrackManiaEditor>(cast<CTrackMania>(GetApp()).Editor);
 #else
 	CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
 #endif
 
-#if TMNEXT || MP4
-	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
-	CGameEditorPluginMapMapType@ pluginmaptype = cast<CGameEditorPluginMapMapType>(editor.PluginMapType);
-#elif TURBO
+	// Get map & pluginmaptype if possible
+#if TURBO
 	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
 	CGameCtnEditorPluginMapType@ pluginmaptype = cast<CGameCtnEditorPluginMapType>(editor.EditorMapType);
 #elif UNITED
 	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
+	auto pluginmaptype == null;
+#else
+	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
+	CGameEditorPluginMapMapType@ pluginmaptype = cast<CGameEditorPluginMapMapType>(editor.PluginMapType);
 #endif
 
 	if (editor is null) {
 		return;
 	}
 
-#if TMNEXT || MP4
-	pluginmaptype.ValidationStatus = CGameEditorPluginMapMapType::EValidationStatus::Validated;
-#elif TURBO
-	pluginmaptype.ValidationStatus = CGameCtnEditorPluginMapType::EValidationStatus::Validated;
+	if (pluginmaptype !is null) {
+#if TURBO
+			pluginmaptype.ValidationStatus = CGameCtnEditorPluginMapType::EValidationStatus::Validated;
+#else
+			pluginmaptype.ValidationStatus = CGameEditorPluginMapMapType::EValidationStatus::Validated;
 #endif
+	}
+
 
 	if (map !is null) {
 #if UNITED
-		map.ChallengeParameters.AuthorTime = author_time;
-		map.ChallengeParameters.AuthorScore = author_time;
-		map.ChallengeParameters.GoldTime = Math::Floor((1000 + author_time + author_time * 0.06)/1000)*1000;
-		map.ChallengeParameters.SilverTime = Math::Floor((1000 + author_time + author_time * 0.2)/1000)*1000;
-		map.ChallengeParameters.BronzeTime = Math::Floor((1000 + author_time + author_time * 0.5)/1000)*1000;
+			map.ChallengeParameters.AuthorTime = author_time;
+			map.ChallengeParameters.AuthorScore = author_time;
+			map.ChallengeParameters.GoldTime = Math::Floor((1000 + author_time + author_time * 0.06)/1000)*1000;
+			map.ChallengeParameters.SilverTime = Math::Floor((1000 + author_time + author_time * 0.2)/1000)*1000;
+			map.ChallengeParameters.BronzeTime = Math::Floor((1000 + author_time + author_time * 0.5)/1000)*1000;
 #else
-		map.TMObjective_AuthorTime = author_time;
+			map.TMObjective_AuthorTime = author_time;
 #endif
 
-#if MP4 || TURBO || UNITED
-		map.IdName = ""; // Remove the map UID, the game will generate it again when saving
+#if !TMNEXT
+			map.IdName = ""; // Remove the map UID, the game will generate it again when saving
 #endif
 	}
 }
@@ -53,20 +59,25 @@ void Render() {
 	if (!menu_visibility) {
 		return;
 	}
+
 #if UNITED
-	CTrackManiaEditor@ editor = cast<CTrackManiaEditor>(cast<CTrackMania>(GetApp()).Editor);
+		CTrackManiaEditor@ editor = cast<CTrackManiaEditor>(cast<CTrackMania>(GetApp()).Editor);
 #else
-	CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+		CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
 #endif
 
 #if TMNEXT || MP4
-	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
-#elif TURBO || UNITED
-	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
+		CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
+#else
+		CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
 #endif
 
-	UI::Begin("\\$cf9" + Icons::Flag + "\\$z Map Validator###MapValidator", menu_visibility, UI::WindowFlags::NoResize | UI::WindowFlags::AlwaysAutoResize | UI::WindowFlags::NoCollapse);
-	if (map !is null && editor !is null) {
+	if (map is null && editor is null) {
+		menu_visibility = false;
+		return;
+	}
+
+	if (UI::Begin("\\$cf9" + Icons::Flag + "\\$z Map Validator###MapValidator", menu_visibility, UI::WindowFlags::NoResize | UI::WindowFlags::AlwaysAutoResize | UI::WindowFlags::NoCollapse)){
 		author_time = UI::InputInt("Author time in ms", author_time ,1);
 
 		if (author_time < 0) author_time = 0;
@@ -85,19 +96,32 @@ void Render() {
 		UI::Text("with " + display_time + " of author time");
 
 #if TURBO
-		UI::Text("Note: your map must have a start and a finish\n(or a multilap + 1CP) to be validated with the plugin");
+			UI::Text("Note: your map must have a start and a finish\n(or a multilap + 1CP) to be validated with the plugin");
 #elif UNITED
-		UI::Text("Note: for an unknown reason, it happens that the times of\nthe medals are not updated, I invite you to check by yourself");
+			UI::Text("Note: for an unknown reason, it happens that the times of\nthe medals are not updated, I invite you to check by yourself");
 #endif
-	} else {
-		UI::Text("Open this plugin in the map editor");
-	}
 
-	UI::End();
-	
+		UI::End();
+	}	
 }
 	
 void RenderMenu() {
+#if UNITED
+		CTrackManiaEditor@ editor = cast<CTrackManiaEditor>(cast<CTrackMania>(GetApp()).Editor);
+#else
+		CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+#endif
+
+#if TMNEXT || MP4
+		CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
+#else
+		CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
+#endif
+
+	if (map is null && editor is null) {
+		return;
+	}
+
 	if(UI::MenuItem("\\$cf9" + Icons::Flag + "\\$z Map Validator", "", menu_visibility)) {
 		menu_visibility = !menu_visibility;
 	}
