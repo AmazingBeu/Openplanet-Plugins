@@ -188,7 +188,11 @@ void AddNewObject(string objectname, int trigger, string type, vec3 pos, int fal
 		if (isofficial) {
 			source = "In-Game";
 		} else if (file.ByteSize == 0 && tempfile.ByteSize == 0 && fallbacksize == 0) {
+#if TMNEXT
 			source = "Local";
+#else
+			source = "In TP";
+#endif
 		} else if (file.ByteSize == 0 && tempfile.ByteSize == 0 && fallbacksize > 0 ) {
 			source = "Embedded";
 			size = fallbacksize;
@@ -261,7 +265,7 @@ void GenerateRow(Objects@ object) {
 	UI::TableNextColumn();
 	UI::Text(object.source);
 	UI::TableNextColumn();
-	if (object.size == 0 && object.source != "In-Game") {
+	if (object.size == 0 && object.source != "In-Game" && object.source != "In TP") {
 		UI::Text("\\$555" + Text::Format("%lld",object.size));
 		if (UI::IsItemHovered()) infotext = "Impossible to get the size of this block/item";
 	} else {
