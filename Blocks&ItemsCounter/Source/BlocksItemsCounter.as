@@ -74,8 +74,12 @@ void RefreshBlocks() {
 		for(uint i = 0; i < blocks.Length; i++) {
 			int idifexist = -1;
 			string blockname;
+			bool isofficial = true;
 			blockname = blocks[i].BlockModel.IdName;
-			if (blockname.ToLower().SubStr(blockname.Length - 22, 22) == ".block.gbx_customblock") blockname = blockname.SubStr(0, blockname.Length - 12);
+			if (blockname.ToLower().SubStr(blockname.Length - 22, 22) == ".block.gbx_customblock") {
+				isofficial = false;
+				blockname = blockname.SubStr(0, blockname.Length - 12);
+			}
 			if (include_default_objects || blockname.ToLower().SubStr(blockname.Length - 10, 10) == ".block.gbx") {
 				vec3 pos;
 				if (blocks[i].CoordX != 4294967295 && blocks[i].CoordZ != 4294967295) { // Not placed in free mapping
@@ -102,7 +106,7 @@ void RefreshBlocks() {
 					objects[index].positions.InsertLast(pos);
 				} else {
 					int trigger = blocks[i].BlockModel.EdWaypointType;
-					AddNewObject(blockname, trigger, "Block", pos );
+					AddNewObject(blockname, trigger, "Block", pos, 0, isofficial);
 					objectsindex.InsertLast(blockname);
 				}
 			}
@@ -121,6 +125,20 @@ void RefreshItems() {
 		for(uint i = 0; i < items.Length; i++) {
 			int idifexist = -1;
 			string itemname = items[i].ItemModel.IdName;
+			int fallbacksize = 0;
+			bool isofficial = true;
+
+			if (itemname.ToLower().SubStr(itemname.Length - 9, 9) == ".item.gbx") {
+				isofficial = false;
+				auto article = cast<CGameCtnArticle>(items[i].ItemModel.ArticlePtr);
+				if (article !is null) {
+					itemname = string(article.PageName) + string(article.Name) + ".Item.Gbx";
+				} else {
+					auto fid = cast<CSystemFidFile@>(GetFidFromNod(items[i].ItemModel));
+					fallbacksize = fid.ByteSize;
+				}
+			}
+
 			if (include_default_objects || itemname.ToLower().SubStr(itemname.Length - 9, 9) == ".item.gbx") {
 				int index = objectsindex.Find(itemname);
 				if (index >= 0) {
@@ -128,7 +146,7 @@ void RefreshItems() {
 					objects[index].positions.InsertLast(items[i].AbsolutePositionInMap);
 				} else {
 					int trigger = items[i].ItemModel.WaypointType;
-					AddNewObject(itemname, trigger, "Item", items[i].AbsolutePositionInMap);
+					AddNewObject(itemname, trigger, "Item", items[i].AbsolutePositionInMap, fallbacksize, isofficial);
 					objectsindex.InsertLast(itemname);
 				}
 			}
@@ -137,7 +155,7 @@ void RefreshItems() {
 	}
 }
 
-void AddNewObject(string objectname, int trigger, string type, vec3 pos) {
+void AddNewObject(string objectname, int trigger, string type, vec3 pos, int fallbacksize, bool isofficial) {
 	bool icon = false;
 	int size;
 	string source;
@@ -145,12 +163,12 @@ void AddNewObject(string objectname, int trigger, string type, vec3 pos) {
 	CGameCtnCollector@ collector;
 	CSystemFidFile@ tempfile;
 
-	if (type == "Item" && objectname.SubStr(0,5) == "club:") {//  ItemCollections
+	if (type == "Item" && Regex::IsMatch(objectname, "^[0-9]*/.*.zip/.*", Regex::Flags::None)) {//  ItemCollections
 		source = "Club";
-		@file = Fids::GetFake('MemoryTemp\\FavoriteClubItems\\' + objectname.SubStr(5,objectname.Length));
+		@file = Fids::GetFake('MemoryTemp\\FavoriteClubItems\\' + objectname);
 		@collector = cast<CGameCtnCollector>(cast<CGameItemModel>(file.Nod));
 		if (collector is null || (collector.Icon !is null || file.ByteSize == 0)) {
-			@tempfile = Fids::GetFake('MemoryTemp\\CurrentMap_EmbeddedFiles\\ContentLoaded\\ClubItems\\' + objectname.SubStr(5,objectname.Length));
+			@tempfile = Fids::GetFake('MemoryTemp\\CurrentMap_EmbeddedFiles\\ContentLoaded\\ClubItems\\' + objectname);
 		}
 	} else { // Blocks and Items
 		source = "Local";
@@ -167,8 +185,13 @@ void AddNewObject(string objectname, int trigger, string type, vec3 pos) {
 		} else  {
 			size = tempfile.ByteSize;
 		}
-		if (file.ByteSize == 0 && tempfile.ByteSize == 0) {
+		if (isofficial) {
 			source = "In-Game";
+		} else if (file.ByteSize == 0 && tempfile.ByteSize == 0 && fallbacksize == 0) {
+			source = "Local";
+		} else if (file.ByteSize == 0 && tempfile.ByteSize == 0 && fallbacksize > 0 ) {
+			source = "Embedded";
+			size = fallbacksize;
 		} else if (file.ByteSize == 0 && tempfile.ByteSize > 0) {
 			source = "Embedded";
 		}
@@ -238,12 +261,18 @@ void GenerateRow(Objects@ object) {
 	UI::TableNextColumn();
 	UI::Text(object.source);
 	UI::TableNextColumn();
-	if (object.icon) {
-		UI::Text("\\$fc0" + Text::Format("%lld",object.size));
-		if (UI::IsItemHovered()) infotext = "All items with size in orange contains the icon. You must re-open the map to have the real size.";
+	if (object.size == 0 && object.source != "In-Game") {
+		UI::Text("\\$555" + Text::Format("%lld",object.size));
+		if (UI::IsItemHovered()) infotext = "Impossible to get the size of this block/item";
 	} else {
-		UI::Text(Text::Format("%lld",object.size));
+		if (object.icon) {
+			UI::Text("\\$fc0" + Text::Format("%lld",object.size));
+			if (UI::IsItemHovered()) infotext = "All items with size in orange contains the icon. You must re-open the map to have the real size.";
+		} else {
+			UI::Text(Text::Format("%lld",object.size));
+		}
 	}
+
 	UI::TableNextColumn();
 	UI::Text(Text::Format("%lld",object.count));
 }
@@ -252,8 +281,16 @@ void Render() {
 	if (!menu_visibility) {
 		return;
 	}
+
+	CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
+
+	if (map is null && editor is null) {
+		menu_visibility = false;
+		return;
+	}
+
 	infotext = "";
-	auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
 
 	UI::SetNextWindowSize(600, 400);
 	UI::SetNextWindowPos(200, 200, UI::Cond::Once);
@@ -346,6 +383,13 @@ void Render() {
 }
 	
 void RenderMenu() {
+	CGameCtnEditorFree@ editor = cast<CGameCtnEditorFree>(GetApp().Editor);
+	CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().RootMap);
+
+	if (map is null && editor is null) {
+		return;
+	}
+
 	if(UI::MenuItem("\\$cf9" + Icons::Table + "\\$z Blocks & Items Counter", "", menu_visibility)) {
 		menu_visibility = !menu_visibility;
 		refreshobject = true;
