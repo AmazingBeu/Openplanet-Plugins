@@ -3,5 +3,5 @@ name = "Blocks & Items Counter"
 author = "Beu"
 category = "Map Editor"
 siteid = 97
-version = "1.3"
+version = "1.4"
 blocks = [ "Plugin_Blocks&ItemsCounter" ]
