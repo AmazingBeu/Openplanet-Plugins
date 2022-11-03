@@ -33,7 +33,7 @@ void Main() {
 			RefreshBlocks();
 			RefreshItems();
 			sortableobjects = objects;
-			sortableobjects.Sort(function(a,b) { return a.size > b.size; }); // Sort by size by default, it will be used as second sort criteria
+			if (sortableobjects.Length > 0) sortableobjects.Sort(function(a,b) { return a.size > b.size; }); // Sort by size by default, it will be used as second sort criteria
 			refreshobject = false;
 		}
 		yield();
