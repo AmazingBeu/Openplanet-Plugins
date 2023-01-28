@@ -32,6 +32,7 @@ CGameUILayer@ findUILayer(const MwFastBuffer<CGameUILayer@> _UILayers, string _M
 
 void Main() {
     while(true) {
+        yield();
         auto app = cast<CTrackMania>(GetApp());
         auto network = cast<CTrackManiaNetwork>(app.Network);
         auto serverinfo = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
@@ -43,6 +44,9 @@ void Main() {
                 InterfacesAreHidden = false;
             }
 
+            // Prevent to continue the loop when not needed
+            if (!HideInterfaces && !InterfacesAreHidden) continue;
+
             CGameManiaAppPlayground@ ManiaApp = cast<CGameManiaAppPlayground>(network.ClientManiaAppPlayground);
             if (ManiaApp !is null) {
                 if (UILayer_LiveRanking is null) {
@@ -50,6 +54,11 @@ void Main() {
                 }
                 if (UILayer_TeamsScores is null) {
                     @UILayer_TeamsScores = findUILayer(ManiaApp.UILayers, "UIModule_TMWTTeams_Header");
+                }
+                if (UILayer_TeamsScores is null && UILayer_LiveRanking is null) {
+                    UI::ShowNotification("\\$77d" + Icons::User + " \\$fffTMWT Interfaces Remover", "Can't find Interfaces to hide, disabling the plugin");
+                    HideInterfaces = false;
+                    InterfacesAreHidden = false;
                 }
                 if (HideInterfaces && !InterfacesAreHidden && ManiaApp.UI.UISequence == CGamePlaygroundUIConfig::EUISequence::Playing) {
                     if (HideLiveRanking && UILayer_LiveRanking !is null) {
@@ -76,6 +85,6 @@ void Main() {
             @UILayer_LiveRanking = null;
             @UILayer_TeamsScores = null;
         }
-        yield();
+
     }
 }
