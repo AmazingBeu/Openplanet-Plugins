@@ -15,6 +15,22 @@ void RenderMenu() {
     }
 }
 
+bool IsPlaying() {
+    auto app = cast<CTrackMania>(GetApp());
+    auto CurrentPlayground = cast<CGamePlayground>(app.CurrentPlayground);
+
+    if (CurrentPlayground is null) return false;
+    if (CurrentPlayground.GameTerminals.Length < 1) return false;
+    if (CurrentPlayground.GameTerminals[0].ControlledPlayer is null) return false;
+    if (CurrentPlayground.GameTerminals[0].ControlledPlayer.User is null) return false;
+    if (CurrentPlayground.GameTerminals[0].GUIPlayer is null) return false;
+    if (CurrentPlayground.GameTerminals[0].GUIPlayer.User is null) return false;
+
+    if (CurrentPlayground.GameTerminals[0].ControlledPlayer.User.Login == CurrentPlayground.GameTerminals[0].GUIPlayer.User.Login) return true;
+
+    return false;
+}
+
 CGameUILayer@ findUILayer(const MwFastBuffer<CGameUILayer@> _UILayers, string _ManialinkId) {
     for (uint i = 0; i < _UILayers.Length; i++) {
         string manialink = _UILayers[i].ManialinkPage;
@@ -40,6 +56,8 @@ void Main() {
         if (network !is null && serverinfo !is null) {
             if (Last_ServerLogin != serverinfo.ServerLogin) {
                 Last_ServerLogin = serverinfo.ServerLogin;
+                @UILayer_LiveRanking = null;
+                @UILayer_TeamsScores = null;
                 HideInterfaces = false;
                 InterfacesAreHidden = false;
             }
@@ -60,7 +78,7 @@ void Main() {
                     HideInterfaces = false;
                     InterfacesAreHidden = false;
                 }
-                if (HideInterfaces && !InterfacesAreHidden && ManiaApp.UI.UISequence == CGamePlaygroundUIConfig::EUISequence::Playing) {
+                if (HideInterfaces && !InterfacesAreHidden && IsPlaying() ) {
                     if (HideLiveRanking && UILayer_LiveRanking !is null) {
                         UILayer_LiveRanking.IsVisible = false;
                     }
@@ -68,7 +86,7 @@ void Main() {
                         UILayer_TeamsScores.IsVisible = false;
                     }
                     InterfacesAreHidden = true;
-                } else if (InterfacesAreHidden && (!HideInterfaces || ManiaApp.UI.UISequence != CGamePlaygroundUIConfig::EUISequence::Playing)) {
+                } else if (InterfacesAreHidden && (!HideInterfaces || !IsPlaying())) {
                     if (UILayer_LiveRanking !is null) {
                         UILayer_LiveRanking.IsVisible = true;
                     }
