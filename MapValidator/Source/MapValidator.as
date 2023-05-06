@@ -72,7 +72,7 @@ void Render() {
 		CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
 #endif
 
-	if (map is null && editor is null) {
+	if (map is null || editor is null) {
 		menu_visibility = false;
 		return;
 	}
@@ -118,7 +118,7 @@ void RenderMenu() {
 		CGameCtnChallenge@ map = cast<CGameCtnChallenge>(GetApp().Challenge);
 #endif
 
-	if (map is null && editor is null) {
+	if (map is null || editor is null) {
 		return;
 	}
 

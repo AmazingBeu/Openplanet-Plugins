@@ -50,10 +50,10 @@ void Main() {
             CGameManiaAppPlayground@ ManiaApp = cast<CGameManiaAppPlayground>(network.ClientManiaAppPlayground);
             if (ManiaApp !is null) {
                 if (UILayer_LiveRanking is null) {
-                    @UILayer_LiveRanking = findUILayer(ManiaApp.UILayers, "UIModule_TMWTTeams_LiveRanking");
+                    @UILayer_LiveRanking = findUILayer(ManiaApp.UILayers, "UIModule_TMWTCommon_LiveRanking");
                 }
                 if (UILayer_TeamsScores is null) {
-                    @UILayer_TeamsScores = findUILayer(ManiaApp.UILayers, "UIModule_TMWTTeams_Header");
+                    @UILayer_TeamsScores = findUILayer(ManiaApp.UILayers, "UIModule_TMWTCommon_Header");
                 }
                 if (UILayer_TeamsScores is null && UILayer_LiveRanking is null) {
                     UI::ShowNotification("\\$77d" + Icons::User + " \\$fffTMWT Interfaces Remover", "Can't find Interfaces to hide, disabling the plugin");
