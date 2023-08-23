@@ -2,5 +2,8 @@
 name = "Countdown Mover"
 author = "Beu"
 category = "Overlay"
-version = "1.0"
+version = "1.1"
 siteid = 431
+
+[script]
+dependencies = ["MLHook"]

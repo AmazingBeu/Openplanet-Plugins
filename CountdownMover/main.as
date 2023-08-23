@@ -4,10 +4,39 @@ vec2 Setting_CountdownOffset = vec2(155. , 4.);
 const string C_Class_UIModules = 'component-modelibs-uimodules-module';
 const string C_Id_Countdown = 'Race_Countdown';
 
+const string C_MLID_UIModuleUpdate = 'MLHook_CustomizableModule';
+const string C_ML_UIModuleUpdate = """
+main() {
+	declare netread Integer Net_LibUI3_CustomizableModule_PropertiesUpdate for Teams[0];
+	declare Integer Last_PropertiesUpdate;
+	while (True) {
+		yield;
+
+		if (Last_PropertiesUpdate != Net_LibUI3_CustomizableModule_PropertiesUpdate) {
+			Last_PropertiesUpdate = Net_LibUI3_CustomizableModule_PropertiesUpdate;
+			SendCustomEvent("MLHook_CustomizableModule_Update", []);
+		}
+	}
+}
+""";
+
+class HookCustomizableModuleEvents: MLHook::HookMLEventsByType {
+	HookCustomizableModuleEvents() {
+		super(C_MLID_UIModuleUpdate);
+	}
+
+    // override this method to avoid reload crash?
+    void OnEvent(MLHook::PendingEvent@ Event) override {
+		trace("CustomizableModule updated");
+        G_Update = true;
+    }
+}
+
+HookCustomizableModuleEvents@ HookEvents = null;
 string G_Last_ServerLogin = "";
 uint G_Last_UILayers_Length = 0;
 CGameManialinkControl@ G_Control;
-bool Update;
+bool G_Update;
 
 // Search and return the CMlFrame of the Race_Countdown UIModule
 CGameManialinkControl@ GetControl(CGameManiaAppPlayground@ _ManiaApp) {
@@ -28,10 +57,15 @@ CGameManialinkControl@ GetControl(CGameManiaAppPlayground@ _ManiaApp) {
 }
 
 void OnSettingsChanged() {
-	Update = true;
+	trace("Settings updated");
+	G_Update = true;
 }
 
 void Main() {
+	@HookEvents = HookCustomizableModuleEvents();
+    MLHook::RegisterMLHook(HookEvents, C_MLID_UIModuleUpdate + "_Update", true);
+    MLHook::InjectManialinkToPlayground(C_MLID_UIModuleUpdate, C_ML_UIModuleUpdate, true);
+
     while(true) {
         CTrackMania@ App = cast<CTrackMania>(GetApp());
         CTrackManiaNetwork@ Network = cast<CTrackManiaNetwork>(App.Network);
@@ -40,23 +74,31 @@ void Main() {
 
         if (Network !is null && ServerInfo !is null && ManiaApp !is null) {
             if (G_Last_ServerLogin != ServerInfo.ServerLogin || G_Last_UILayers_Length != ManiaApp.UILayers.Length) {
+				trace("Server or UILayers updated");
                 G_Last_ServerLogin = ServerInfo.ServerLogin;
 				G_Last_UILayers_Length = ManiaApp.UILayers.Length;
 				@G_Control = GetControl(ManiaApp);
-				Update = true;
+				G_Update = true;
             }
 
-			if (G_Control !is null && Update) {
-				Update = false;
+			if (G_Control !is null && G_Update) {
+				G_Update = false;
 				G_Control.RelativePosition_V3 = Setting_CountdownOffset;
 			}
         } else {
 			G_Last_ServerLogin = "";
 			G_Last_UILayers_Length = 0;
 			@G_Control = null;
-			Update = true;
+			G_Update = true;
         }
 
         sleep(1000);
     }
+}
+
+void OnDestroyed() { _Unload(); }
+void OnDisabled() { _Unload(); }
+void _Unload() {
+    trace('_Unload, unloading all hooks and removing all injected ML');
+    MLHook::UnregisterMLHooksAndRemoveInjectedML();
 }
