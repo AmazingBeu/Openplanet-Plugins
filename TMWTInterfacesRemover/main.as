@@ -1,16 +1,31 @@
-bool InterfacesAreHidden;
-bool HideInterfaces;
-string Last_ServerLogin;
-CGameUILayer@ UILayer_LiveRanking;
-CGameUILayer@ UILayer_TeamsScores;
+const string C_Class_UIModules = 'component-modelibs-uimodules-module';
+const string C_Id_TMWT_LiveRanking = 'TMWTCommon_LiveRanking';
+const string C_Id_TMWT_Header = 'TMWTCommon_Header';
+const string C_Id_TMWC2023_LiveRanking = 'TMWC2023_LiveRanking';
+const string C_Id_TMWC2023_Header = 'TMWC2023_Header';
+
+
+bool G_InterfacesAreHidden;
+bool G_HideInterfaces;
+string G_Last_ServerLogin;
+CGameUILayer@ G_UILayer_LiveRanking;
+CGameUILayer@ G_UILayer_TeamsScores;
+
+void OnSettingsChanged() {
+	trace("Settings updated");
+    @G_UILayer_LiveRanking = null;
+    @G_UILayer_TeamsScores = null;
+    G_InterfacesAreHidden = false;
+}
+
 
 void RenderMenu() {
-    if(UI::MenuItem("\\$77d" + Icons::User + " \\$fffTMWT Interfaces Remover", "", HideInterfaces)) {
+    if(UI::MenuItem("\\$77d" + Icons::User + " \\$fffTMWT Interfaces Remover", "", G_HideInterfaces)) {
         auto app = cast<CTrackMania>(GetApp());
         auto network = cast<CTrackManiaNetwork>(app.Network);
         auto serverinfo = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
         if (network !is null && serverinfo !is null && serverinfo.ServerLogin != "") {
-            HideInterfaces = !HideInterfaces;
+            G_HideInterfaces = !G_HideInterfaces;
         }
     }
 }
@@ -32,17 +47,20 @@ bool IsPlaying() {
 }
 
 CGameUILayer@ findUILayer(const MwFastBuffer<CGameUILayer@> _UILayers, string _ManialinkId) {
-    for (uint i = 0; i < _UILayers.Length; i++) {
-        string manialink = _UILayers[i].ManialinkPage;
-        auto firstlines = manialink.Split("\n", 5);
-        if (firstlines.Length > 0) {
-            for (uint j = 0; j < firstlines.Length - 1; j++) {
-                if (firstlines[j].Contains(_ManialinkId)) {
-                    return _UILayers[i];
-                }
-            }
-        }
-    }
+    for (uint Index = 0; Index < _UILayers.Length; ++Index) {
+		CGameUILayer@ Layer = _UILayers[Index];
+		CGameManialinkPage@ Page = Layer.LocalPage;
+
+		// Check if we have the main UI module
+		Page.GetClassChildren(C_Class_UIModules, Page.MainFrame, true);
+
+		if (Page.GetClassChildren_Result.Length > 0) {
+			if (Page.GetClassChildren_Result[0].ControlId == _ManialinkId) {
+				return _UILayers[Index];
+			}
+		}
+	}
+
     return null;
 }
 
@@ -54,55 +72,58 @@ void Main() {
         auto serverinfo = cast<CTrackManiaNetworkServerInfo>(network.ServerInfo);
 
         if (network !is null && serverinfo !is null) {
-            if (Last_ServerLogin != serverinfo.ServerLogin) {
-                Last_ServerLogin = serverinfo.ServerLogin;
-                @UILayer_LiveRanking = null;
-                @UILayer_TeamsScores = null;
-                HideInterfaces = false;
-                InterfacesAreHidden = false;
+            if (G_Last_ServerLogin != serverinfo.ServerLogin) {
+                G_Last_ServerLogin = serverinfo.ServerLogin;
+                @G_UILayer_LiveRanking = null;
+                @G_UILayer_TeamsScores = null;
+                G_HideInterfaces = false;
+                G_InterfacesAreHidden = false;
             }
 
             // Prevent to continue the loop when not needed
-            if (!HideInterfaces && !InterfacesAreHidden) continue;
+            if (!G_HideInterfaces && !G_InterfacesAreHidden) continue;
 
             CGameManiaAppPlayground@ ManiaApp = cast<CGameManiaAppPlayground>(network.ClientManiaAppPlayground);
             if (ManiaApp !is null) {
-                if (UILayer_LiveRanking is null) {
-                    @UILayer_LiveRanking = findUILayer(ManiaApp.UILayers, "UIModule_TMWTCommon_LiveRanking");
+                if (G_UILayer_LiveRanking is null) {
+                    if (Setting_GameMode == GameMode::TMWT) @G_UILayer_LiveRanking = findUILayer(ManiaApp.UILayers, C_Id_TMWT_LiveRanking);
+                    else if (Setting_GameMode == GameMode::TMWC2023) @G_UILayer_LiveRanking = findUILayer(ManiaApp.UILayers, C_Id_TMWC2023_LiveRanking);
                 }
-                if (UILayer_TeamsScores is null) {
-                    @UILayer_TeamsScores = findUILayer(ManiaApp.UILayers, "UIModule_TMWTCommon_Header");
+                if (G_UILayer_TeamsScores is null) {
+                    if (Setting_GameMode == GameMode::TMWT) @G_UILayer_TeamsScores = findUILayer(ManiaApp.UILayers, C_Id_TMWT_Header);
+                    else if (Setting_GameMode == GameMode::TMWC2023) @G_UILayer_TeamsScores = findUILayer(ManiaApp.UILayers, C_Id_TMWC2023_Header);
                 }
-                if (UILayer_TeamsScores is null && UILayer_LiveRanking is null) {
+                if (G_UILayer_TeamsScores is null && G_UILayer_LiveRanking is null) {
                     UI::ShowNotification("\\$77d" + Icons::User + " \\$fffTMWT Interfaces Remover", "Can't find Interfaces to hide, disabling the plugin");
-                    HideInterfaces = false;
-                    InterfacesAreHidden = false;
+                    G_HideInterfaces = false;
+                    G_InterfacesAreHidden = false;
                 }
-                if (HideInterfaces && !InterfacesAreHidden && IsPlaying() ) {
-                    if (HideLiveRanking && UILayer_LiveRanking !is null) {
-                        UILayer_LiveRanking.IsVisible = false;
+                if (G_HideInterfaces && !G_InterfacesAreHidden && IsPlaying() ) {
+                    if (HideLiveRanking && G_UILayer_LiveRanking !is null) {
+                        G_UILayer_LiveRanking.IsVisible = false;
                     }
-                    if (HideTeamsScores && UILayer_TeamsScores !is null) {
-                        UILayer_TeamsScores.IsVisible = false;
+                    if (HideTeamsScores && G_UILayer_TeamsScores !is null) {
+                        G_UILayer_TeamsScores.IsVisible = false;
                     }
-                    InterfacesAreHidden = true;
-                } else if (InterfacesAreHidden && (!HideInterfaces || !IsPlaying())) {
-                    if (UILayer_LiveRanking !is null) {
-                        UILayer_LiveRanking.IsVisible = true;
+                    G_InterfacesAreHidden = true;
+                } else if (G_InterfacesAreHidden && (!G_HideInterfaces || !IsPlaying())) {
+                    if (G_UILayer_LiveRanking !is null) {
+                        G_UILayer_LiveRanking.IsVisible = true;
                     }
-                    if (UILayer_TeamsScores !is null) {
-                        UILayer_TeamsScores.IsVisible = true;
+                    if (G_UILayer_TeamsScores !is null) {
+                        G_UILayer_TeamsScores.IsVisible = true;
                     }
-                    InterfacesAreHidden = false;
+                    G_InterfacesAreHidden = false;
                 }
             }
         } else {
-            Last_ServerLogin = "";
-            HideInterfaces = false;
-            InterfacesAreHidden = false;
-            @UILayer_LiveRanking = null;
-            @UILayer_TeamsScores = null;
+            G_Last_ServerLogin = "";
+            G_HideInterfaces = false;
+            G_InterfacesAreHidden = false;
+            @G_UILayer_LiveRanking = null;
+            @G_UILayer_TeamsScores = null;
         }
 
     }
 }
+
