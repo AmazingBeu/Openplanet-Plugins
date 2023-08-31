@@ -42,7 +42,7 @@ void Main() {
                         auto firstlines = manialink.Split("\n", 5);
                         if (firstlines.Length > 0) {
                             for (uint j = 0; j < firstlines.Length - 1; j++) {
-                                if (firstlines[j].Contains("UIModule_TMWTTeams_Sign")) {
+                                if (firstlines[j].Contains("UIModule_TMWTCommon_Sign")) {
                                     maniaapp.UILayerDestroy(uilayers[i]);
                                 }
                             }
