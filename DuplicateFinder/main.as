@@ -220,7 +220,7 @@ void Render() {
 			}
 			if (UI::IsItemHovered()) infotext = "Parsing all blocks and items to generate the table. Please wait... (" + computedobjects + "/" + totalobjects + ")";
 		} else {
-			if (UI::Button(Icons::SyncAlt + " Refresh")) {
+			if (UI::Button(Icons::Refresh + " Refresh")) {
 				refreshobject = true;
 				forcesort = true;
 			}
@@ -300,4 +300,3 @@ void RenderMenu() {
 		refreshobject = true;
 	}
 }
-

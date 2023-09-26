@@ -21,7 +21,7 @@ void Main() {
 }
 
 void RenderMenuMain() {
-	if (!G_PressEnter && UI::BeginMenu("\\$cf9" + Icons::ExternalLinkAlt + "\\$z Quick Link Opener##QuickLinkOpenerMenu")) {
+	if (!G_PressEnter && UI::BeginMenu("\\$cf9" + Icons::ExternalLink + "\\$z Quick Link Opener##QuickLinkOpenerMenu")) {
 		G_QuickURL = UI::InputText("###quickURL", G_QuickURL, G_PressEnter, UI::InputTextFlags::EnterReturnsTrue + UI::InputTextFlags::CallbackAlways, UI::InputTextCallback(ITCB));
 
 		if (G_LinksCache.Length > 0) {
