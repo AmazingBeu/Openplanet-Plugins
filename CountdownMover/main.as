@@ -1,7 +1,7 @@
 [Setting name="Countdown Position"]
 vec2 Setting_CountdownOffset = vec2(155. , 4.);
 
-const string C_Class_UIModules = 'component-modelibs-uimodules-module';
+const string C_Class_UIModules = 'component-cmgame-uimodules-module';
 const string C_Id_Countdown = 'Race_Countdown';
 
 const string C_MLID_UIModuleUpdate = 'MLHook_CustomizableModule';
@@ -53,6 +53,7 @@ CGameManialinkControl@ GetControl(CGameManiaAppPlayground@ _ManiaApp) {
 			}
 		}
 	}
+	print("Layer not found");
 	return null;
 }
 
@@ -63,7 +64,7 @@ void OnSettingsChanged() {
 
 void Main() {
 	@HookEvents = HookCustomizableModuleEvents();
-    MLHook::RegisterMLHook(HookEvents, C_MLID_UIModuleUpdate + "_Update", true);
+    MLHook::RegisterMLHook(HookEvents, C_MLID_UIModuleUpdate + "_Update", false);
     MLHook::InjectManialinkToPlayground(C_MLID_UIModuleUpdate, C_ML_UIModuleUpdate, true);
 
     while(true) {

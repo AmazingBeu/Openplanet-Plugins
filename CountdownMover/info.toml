@@ -2,7 +2,7 @@
 name = "Countdown Mover"
 author = "Beu"
 category = "Overlay"
-version = "1.1"
+version = "1.2"
 siteid = 431
 
 [script]
