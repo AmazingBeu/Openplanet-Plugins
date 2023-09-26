@@ -52,7 +52,8 @@ void RefreshBlocks() {
 						pos.z = blocks[i].CoordZ * 32 + 16;
 					}
 				} else {
-					pos = Dev::GetOffsetVec3(blocks[i], 0x6c);
+					uint16 offset = Reflection::GetType("CGameCtnBlock").GetMember("Dir").Offset + 0x8;
+					pos = Dev::GetOffsetVec3(blocks[i], offset);
 					// center the coordinates in the middle of the block
 					pos.x += 16;
 					pos.y += 4;
