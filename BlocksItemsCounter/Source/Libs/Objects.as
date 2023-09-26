@@ -174,10 +174,8 @@ void AddNewObject(const string &in objectname, int trigger, const string &in typ
 bool FocusCam(const string &in objectname) {
 	auto editor = cast<CGameCtnEditorFree>(GetApp().Editor);
 	auto camera = editor.OrbitalCameraControl;
-	auto map = GetApp().RootMap;
 
-
-	if (camera !is null) {
+	if (camera !is null) {		
 		int index = objectsindex.Find(objectname);
 
 		camerafocusindex++;
@@ -188,8 +186,11 @@ bool FocusCam(const string &in objectname) {
 
 		camera.m_TargetedPosition = objects[index].positions[camerafocusindex];
 		// Workaround to update camera TargetedPosition
+		auto m_ParamScrollZoomPowe = camera.m_ParamScrollZoomPower;
+		camera.m_ParamScrollZoomPower = 0;
 		editor.ButtonZoomInOnClick();
-		editor.ButtonZoomOutOnClick();
+		camera.m_ParamScrollZoomPower = m_ParamScrollZoomPowe;
+
 		return true;
 	}
 	return false;
