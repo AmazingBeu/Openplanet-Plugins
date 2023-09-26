@@ -1,0 +1,9 @@
+[meta]
+name = "DuplicateFinder"
+author = "Beu"
+category = "Map Editor"
+version = "1.1"
+siteid = 220
+
+[script]
+timeout = 0
