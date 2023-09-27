@@ -3,6 +3,7 @@ uint S_NbOfLinksInCache = 5;
 
 const string C_LinksCache = "LinksCache.txt";
 
+bool G_PermissionIssueNotified = false;
 string G_QuickURL = "";
 bool G_PressEnter = false;
 bool G_WasEditing = false;
@@ -10,6 +11,8 @@ bool G_WasEditing = false;
 array<string> G_LinksCache;
 
 void Main() {
+	if (!hasPermissions()) return;
+
 	trace("Loading links cache");
 	string filepath = IO::FromStorageFolder(C_LinksCache);
 	IO::File file(filepath);
@@ -21,6 +24,8 @@ void Main() {
 }
 
 void RenderMenuMain() {
+	if (!hasPermissions()) return;
+
 	if (!G_PressEnter && UI::BeginMenu("\\$cf9" + Icons::ExternalLink + "\\$z Quick Link Opener##QuickLinkOpenerMenu")) {
 		G_QuickURL = UI::InputText("###quickURL", G_QuickURL, G_PressEnter, UI::InputTextFlags::EnterReturnsTrue + UI::InputTextFlags::CallbackAlways, UI::InputTextCallback(ITCB));
 
@@ -48,6 +53,7 @@ void ITCB(UI::InputTextCallbackData@ d) {
 }
 
 void LoadLink(string _Url, bool _NewUrl) {
+	if (!hasPermissions()) return;
 	if (_Url == "") return;
 
 	string parsedURL = "";
@@ -77,4 +83,16 @@ void LoadLink(string _Url, bool _NewUrl) {
 
 	CTrackMania@ app = cast<CTrackMania>(GetApp());
 	app.ManiaPlanetScriptAPI.OpenLink(parsedURL, CGameManiaPlanetScriptAPI::ELinkType::ManialinkBrowser);
+}
+
+bool hasPermissions() {
+	if (Permissions::PlayPublicClubRoom()) return true;
+
+	if (!G_PermissionIssueNotified) {
+		G_PermissionIssueNotified = true;
+		string msg = "Missing permissions: you need to be able to play on public room to use this plugin.";
+		warn(msg);
+		UI::ShowNotification(Meta::ExecutingPlugin().Name, msg, vec4(.9, .5, .3, .2), 15000);
+	}
+	return false;
 }
