@@ -1,4 +1,4 @@
-const string C_Class_UIModules = 'component-modelibs-uimodules-module';
+const string C_Class_UIModules = 'component-cmgame-uimodules-module';
 const string C_Id_TMWT_LiveRanking = 'TMWTCommon_LiveRanking';
 const string C_Id_TMWT_Header = 'TMWTCommon_Header';
 const string C_Id_TMWC2023_LiveRanking = 'TMWC2023_LiveRanking';
