@@ -32,14 +32,17 @@ void RefreshBlocks() {
 		auto pluginmaptype = cast<CGameEditorPluginMapMapType>(cast<CGameCtnEditorFree>(GetApp().Editor).PluginMapType);
 
 		for(uint i = 0; i < blocks.Length; i++) {
-			int idifexist = -1;
-			string blockname;
+			string blockname = blocks[i].BlockModel.IdName;
+			int fallbacksize = 0;
 			bool isofficial = true;
-			blockname = blocks[i].BlockModel.IdName;
 			if (blockname.ToLower().SubStr(blockname.Length - 22, 22) == ".block.gbx_customblock") {
 				isofficial = false;
 				blockname = blockname.SubStr(0, blockname.Length - 12);
+
+				auto article = cast<CGameCtnArticle>(blocks[i].BlockInfo.ArticlePtr);
+				fallbacksize = article.BlockItem_ItemModelArticle.CollectorFid.ByteSize;
 			}
+
 
 			if (include_default_objects || blockname.ToLower().SubStr(blockname.Length - 10, 10) == ".block.gbx") {
 				vec3 pos;
@@ -67,7 +70,7 @@ void RefreshBlocks() {
 					objects[index].positions.InsertLast(pos);
 				} else {
 					int trigger = blocks[i].BlockModel.EdWaypointType;
-					AddNewObject(blockname, trigger, "Block", pos, 0, isofficial);
+					AddNewObject(blockname, trigger, "Block", pos, fallbacksize, isofficial);
 					objectsindex.InsertLast(blockname);
 				}
 			}
@@ -84,7 +87,6 @@ void RefreshItems() {
 		// Items
 		auto items = map.AnchoredObjects;
 		for(uint i = 0; i < items.Length; i++) {
-			int idifexist = -1;
 			string itemname = items[i].ItemModel.IdName;
 			int fallbacksize = 0;
 			bool isofficial = true;
@@ -94,10 +96,9 @@ void RefreshItems() {
 				auto article = cast<CGameCtnArticle>(items[i].ItemModel.ArticlePtr);
 				if (article !is null) {
 					itemname = string(article.PageName) + string(article.Name) + ".Item.Gbx";
-				} else {
-					auto fid = cast<CSystemFidFile@>(GetFidFromNod(items[i].ItemModel));
-					fallbacksize = fid.ByteSize;
 				}
+				auto fid = cast<CSystemFidFile@>(GetFidFromNod(items[i].ItemModel));
+				fallbacksize = fid.ByteSize;
 			}
 
 			if (include_default_objects || itemname.ToLower().SubStr(itemname.Length - 9, 9) == ".item.gbx") {
