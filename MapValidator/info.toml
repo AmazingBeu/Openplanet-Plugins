@@ -2,8 +2,7 @@
 name = "Map Validator"
 author = "Beu"
 category = "Map Editor"
-
 siteid = 91
-version = "1.6"
-
+version = "1.7"
 blocks = [ "Plugin_MapValidator" ]
+
