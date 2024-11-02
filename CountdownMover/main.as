@@ -25,7 +25,6 @@ class HookCustomizableModuleEvents: MLHook::HookMLEventsByType {
 		super(C_MLID_UIModuleUpdate);
 	}
 
-    // override this method to avoid reload crash?
     void OnEvent(MLHook::PendingEvent@ Event) override {
 		trace("CustomizableModule updated");
         G_Update = true;
@@ -64,7 +63,7 @@ void OnSettingsChanged() {
 
 void Main() {
 	@HookEvents = HookCustomizableModuleEvents();
-    MLHook::RegisterMLHook(HookEvents, C_MLID_UIModuleUpdate + "_Update", false);
+    MLHook::RegisterMLHook(HookEvents, C_MLID_UIModuleUpdate + "_Update", true);
     MLHook::InjectManialinkToPlayground(C_MLID_UIModuleUpdate, C_ML_UIModuleUpdate, true);
 
     while(true) {
